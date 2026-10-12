@@ -49,6 +49,7 @@ class AppSettingsStore(private val context: Context) {
                 lineSpacing = preferences.enumValue(Keys.readerLineSpacing, ReaderLineSpacing.Standard),
                 defaultReplySort = preferences.enumValue(Keys.defaultReplySort, ThreadReplySort.Hot),
                 mediaLoading = preferences.enumValue(Keys.mediaLoading, ReaderMediaLoadingPolicy.Automatic),
+                autoOriginalImage = preferences[Keys.autoOriginalImage] ?: true,
             ),
         )
     }
@@ -66,6 +67,7 @@ class AppSettingsStore(private val context: Context) {
             preferences[Keys.readerLineSpacing] = value.reading.lineSpacing.name
             preferences[Keys.defaultReplySort] = value.reading.defaultReplySort.name
             preferences[Keys.mediaLoading] = value.reading.mediaLoading.name
+            preferences[Keys.autoOriginalImage] = value.reading.autoOriginalImage
         }
     }
 
@@ -87,6 +89,7 @@ class AppSettingsStore(private val context: Context) {
         it[Keys.readerLineSpacing] = value.lineSpacing.name
         it[Keys.defaultReplySort] = value.defaultReplySort.name
         it[Keys.mediaLoading] = value.mediaLoading.name
+        it[Keys.autoOriginalImage] = value.autoOriginalImage
     }
 
     private suspend fun edit(transform: (androidx.datastore.preferences.core.MutablePreferences) -> Unit) {
@@ -105,6 +108,7 @@ class AppSettingsStore(private val context: Context) {
         val readerLineSpacing = stringPreferencesKey("reader_line_spacing")
         val defaultReplySort = stringPreferencesKey("reader_default_reply_sort")
         val mediaLoading = stringPreferencesKey("reader_media_loading")
+        val autoOriginalImage = booleanPreferencesKey("reader_auto_original_image")
     }
 }
 
