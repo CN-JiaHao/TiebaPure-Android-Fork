@@ -34,6 +34,7 @@ import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.SettingsBrightness
 import androidx.compose.material.icons.outlined.ThumbUpOffAlt
+import androidx.compose.material.icons.outlined.ZoomInMap
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
@@ -431,7 +432,20 @@ fun ReadingSettingsScreen(
                 )
             }
         }
-        item { SettingsFooter("此设置只影响帖子媒体和视频封面，不影响头像、贴吧图标或表情。") }
+        item {
+            SettingsSwitchRow(
+                title = "自动加载原图",
+                icon = Icons.Outlined.ZoomInMap,
+                checked = preferences.autoOriginalImage,
+                onCheckedChange = { onChange(preferences.copy(autoOriginalImage = it)) },
+            )
+        }
+        item {
+            SettingsFooter(
+                "开启后，打开图片浏览器时会自动下载并显示原图，不再需要手动点击「查看原图」。原图文件较大，移动网络下会消耗更多流量。",
+            )
+        }
+        item { SettingsFooter("媒体加载策略只影响帖子媒体和视频封面，不影响头像、贴吧图标或表情。") }
         item {
             TextButton(
                 onClick = { onChange(ReadingPreferences()) },
