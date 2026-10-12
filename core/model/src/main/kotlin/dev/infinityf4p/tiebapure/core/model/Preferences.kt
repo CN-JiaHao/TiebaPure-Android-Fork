@@ -65,6 +65,7 @@ data class ReadingPreferences(
     val lineSpacing: ReaderLineSpacing = ReaderLineSpacing.Standard,
     val defaultReplySort: ThreadReplySort = ThreadReplySort.Hot,
     val mediaLoading: ReaderMediaLoadingPolicy = ReaderMediaLoadingPolicy.Automatic,
+    val autoOriginalImage: Boolean = true,
 )
 
 enum class BlocklistEntryKind { Keyword, User, Forum }
