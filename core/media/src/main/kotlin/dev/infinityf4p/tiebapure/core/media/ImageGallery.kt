@@ -120,6 +120,7 @@ fun ImageGallery(
     onDismiss: () -> Unit,
     onDownload: (ImageContent) -> Unit = {},
     saveAction: ImageSaveAction? = null,
+    autoOriginalImage: Boolean = false,
 ) {
     if (images.isEmpty()) return
     val safeInitialPage = ImageGalleryPolicy.clampedPage(initialPage, images.size)
@@ -153,6 +154,36 @@ fun ImageGallery(
             originalJobs.values.forEach(Job::cancel)
             saveJobs.values.forEach(Job::cancel)
         }
+    }
+
+    fun requestOriginal(page: Int) {
+        val url = ImageGalleryPolicy.originalUrl(images[page]) ?: return
+        if (originalJobs[page]?.isActive == true) return
+        originalJobs[page] = scope.launch {
+            originalStates[page] = OriginalImageState.Loading(0f)
+            try {
+                val file = loader.load(url) { progress ->
+                    scope.launch {
+                        if (originalStates[page] is OriginalImageState.Loading) {
+                            originalStates[page] = OriginalImageState.Loading(
+                                progress.coerceIn(0f, 1f),
+                            )
+                        }
+                    }
+                }
+                originalFiles[page] = file
+                originalStates[page] = OriginalImageState.Ready
+            } catch (error: Throwable) {
+                if (error is CancellationException) throw error
+                originalStates[page] = OriginalImageState.Failed(null)
+            }
+        }
+    }
+
+    LaunchedEffect(autoOriginalImage, pagerState.settledPage) {
+        if (!autoOriginalImage) return@LaunchedEffect
+        val page = pagerState.settledPage.coerceIn(images.indices)
+        if (originalStates[page] == null) requestOriginal(page)
     }
 
     Dialog(
@@ -236,29 +267,7 @@ fun ImageGallery(
                 originalState = originalState,
                 saveAvailable = downloadableImage != null,
                 saveState = saveState,
-                onRequestOriginal = {
-                    if (originalUrl == null) return@GalleryBottomBar
-                    if (originalJobs[currentPage]?.isActive == true) return@GalleryBottomBar
-                    originalJobs[currentPage] = scope.launch {
-                        originalStates[currentPage] = OriginalImageState.Loading(0f)
-                        try {
-                            val file = loader.load(originalUrl) { progress ->
-                                scope.launch {
-                                    if (originalStates[currentPage] is OriginalImageState.Loading) {
-                                        originalStates[currentPage] = OriginalImageState.Loading(
-                                            progress.coerceIn(0f, 1f),
-                                        )
-                                    }
-                                }
-                            }
-                            originalFiles[currentPage] = file
-                            originalStates[currentPage] = OriginalImageState.Ready
-                        } catch (error: Throwable) {
-                            if (error is CancellationException) throw error
-                            originalStates[currentPage] = OriginalImageState.Failed(null)
-                        }
-                    }
-                },
+                onRequestOriginal = { requestOriginal(currentPage) },
                 onSave = {
                     val safeImage = downloadableImage ?: return@GalleryBottomBar
                     if (saveJobs[currentPage]?.isActive == true) return@GalleryBottomBar
