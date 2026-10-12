@@ -529,6 +529,7 @@ fun ThreadScreen(
             onDismiss = { gallery = null },
             onDownload = onDownloadImage,
             saveAction = onSaveImage,
+            autoOriginalImage = LocalReadingPreferences.current.autoOriginalImage,
         )
     }
     video?.let { selected -> VideoPlayer(selected, onDismiss = { video = null }) }
