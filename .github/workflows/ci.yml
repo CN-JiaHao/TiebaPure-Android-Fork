@@ -98,16 +98,26 @@ jobs:
       - name: Sign release APK with a personal key
         run: |
           BUILD_TOOLS="$ANDROID_SDK_ROOT/build-tools/36.0.0"
-          KS="$RUNNER_TEMP/personal-release.p12"
-          PW="tiebapure-$(openssl rand -hex 12)"
-          keytool -genkeypair -keystore "$KS" -storetype PKCS12 -alias tiebapure \
-            -keyalg RSA -keysize 4096 -validity 10950 \
-            -storepass "$PW" -keypass "$PW" \
-            -dname "CN=TiebaPure Personal, OU=Self Use, O=Maverick, C=CN"
+          if [ -n "$TIEBAPURE_KEYSTORE_BASE64" ]; then
+            echo "$TIEBAPURE_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/personal-release.p12"
+            KS="$RUNNER_TEMP/personal-release.p12"
+            PW="$TIEBAPURE_KEYSTORE_PASSWORD"
+            ALIAS="$TIEBAPURE_KEY_ALIAS"
+            echo "::notice::使用固定签名密钥（secrets），后续构建可覆盖安装"
+          else
+            KS="$RUNNER_TEMP/personal-release.p12"
+            PW="tiebapure-$(openssl rand -hex 12)"
+            ALIAS="tiebapure"
+            keytool -genkeypair -keystore "$KS" -storetype PKCS12 -alias "$ALIAS" \
+              -keyalg RSA -keysize 4096 -validity 10950 \
+              -storepass "$PW" -keypass "$PW" \
+              -dname "CN=TiebaPure Personal, OU=Self Use, O=Maverick, C=CN"
+            echo "::notice::secrets 中无固定密钥，本次使用一次性随机签名"
+          fi
           "$BUILD_TOOLS/zipalign" -p -f 4 \
             app/build/outputs/apk/release/app-release-unsigned.apk \
             "$RUNNER_TEMP/app-release-aligned.apk"
-          "$BUILD_TOOLS/apksigner" sign --ks "$KS" --ks-key-alias tiebapure \
+          "$BUILD_TOOLS/apksigner" sign --ks "$KS" --ks-key-alias "$ALIAS" \
             --ks-pass "pass:$PW" --key-pass "pass:$PW" \
             --out "$RUNNER_TEMP/TiebaPure-personal.apk" \
             "$RUNNER_TEMP/app-release-aligned.apk"
